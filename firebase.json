@@ -13,9 +13,21 @@
       "**/.*",
       "**/node_modules/**"
     ],
+    "redirects": [
+      {
+        "source": "/index.*",
+        "destination": "/",
+        "type": 301
+      }
+    ],
     "rewrites": [
       {
-        "source": "/img", "function": "helloWorld"
+        "source": "/",
+        "destination": "/index.html"
+      },
+      {
+        "source": "**",
+        "function": "img"
       }
     ]
   }

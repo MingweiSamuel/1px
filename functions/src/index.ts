@@ -1,32 +1,48 @@
 import * as functions from "firebase-functions";
 
-const colorHexRegex = /^\/img\/([0-9A-F]{2})([0-9A-F]{2})([0-9A-F]{2})$/i;
+const colorHexRegex = /^\/([0-9A-F]{2})([0-9A-F]{2})([0-9A-F]{2})$/i;
 
-export const helloWorld = functions.https.onRequest((request, response) => {
+export const img = functions.https.onRequest((request, response) => {
   const match = colorHexRegex.exec(request.path);
   if (!match) {
+    const msg =
+`Not Found
+Path: "${request.path}"
+Expected: "/{6 digit hex code}"
+Example: "/f29530"`;
     response
-      .status(400)
+      .status(404)
       .type('text')
-      .send(`Bad request path: "${request.path}"\nPath should look like: "/img/EB8904"`);
-    return;
+      .send(msg);
   }
-  response
-    .type('bmp')
-    .send(makeBmp([0xEB, 0x89, 0x04]));
+  else if (request.path !== match[0].toLowerCase()) {
+    response.redirect(301, request.path.toLowerCase());
+  }
+  else {
+    if (4 !== match.length) {
+      functions.logger.error(`Invalid regex match length: ${match.length}, url: ${request.url}.`);
+      response.sendStatus(500);
+    }
+    else {
+      const rgbBytes = match.slice(1).map(s => parseInt(s, 16)) as [number, number, number];
+      response
+        .type('bmp')
+        .send(makeBmp(rgbBytes));
+    }
+  }
 });
 
 function makeBmp(rgbBytes: [number, number, number]): Buffer {
   let buf = Buffer.from([
     0x42, 0x4D,             // Signature 'BM'
-    0xaa, 0x00, 0x00, 0x00, // Size: 170 bytes
+    0x8e, 0x00, 0x00, 0x00, // Size: 170 bytes
     0x00, 0x00,             // Unused
     0x00, 0x00,             // Unused
     0x8a, 0x00, 0x00, 0x00, // Offset to image data
 
     0x7c, 0x00, 0x00, 0x00, // DIB header size (124 bytes)
-    0x04, 0x00, 0x00, 0x00, // Width (4px)
-    0x02, 0x00, 0x00, 0x00, // Height (2px)
+    0x01, 0x00, 0x00, 0x00, // Width (4px)
+    0x01, 0x00, 0x00, 0x00, // Height (2px)
     0x01, 0x00,             // Planes (1)
     0x20, 0x00,             // Bits per pixel (32)
     0x03, 0x00, 0x00, 0x00, // Format (bitfield = use bitfields | no compression)
@@ -51,14 +67,7 @@ function makeBmp(rgbBytes: [number, number, number]): Buffer {
     0x00, 0x00, 0x00, 0x00, // Unknown
 
     // Image data:
-    0xFF, 0x00, 0x00, 0x7F, // Bottom left pixel
-    0x00, 0xFF, 0x00, 0x7F,
-    0x00, 0x00, 0xFF, 0x7F,
-    0xFF, 0xFF, 0xFF, 0x7F, // Bottom right pixel
-    0xFF, 0x00, 0x00, 0xFF, // Top left pixel
-    0x00, 0xFF, 0x00, 0xFF,
-    0x00, 0x00, 0xFF, 0xFF,
-    0xFF, 0xFF, 0xFF, 0xFF  // Top right pixel
+    rgbBytes[2], rgbBytes[1], rgbBytes[0], 0xFF,
   ]);
   functions.logger.log("Hello from info. Here's an object:", buf.length);
   return buf;

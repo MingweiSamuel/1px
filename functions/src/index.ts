@@ -26,6 +26,7 @@ Example: "/f29530"`;
     else {
       const rgbBytes = match.slice(1).map(s => parseInt(s, 16)) as [number, number, number];
       response
+        .setHeader("cache-control", "public, max-age=31536000")
         .type("bmp")
         .send(makeBmp(rgbBytes));
     }

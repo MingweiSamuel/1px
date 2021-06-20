@@ -35,7 +35,7 @@ Example: "/f29530"`;
 function makeBmp(rgbBytes: [number, number, number]): Buffer {
   return Buffer.from([
     0x42, 0x4D,             // Signature 'BM'
-    0x8e, 0x00, 0x00, 0x00, // Size: 170 bytes
+    0x8e, 0x00, 0x00, 0x00, // Size: 142 bytes
     0x00, 0x00,             // Unused
     0x00, 0x00,             // Unused
     0x8a, 0x00, 0x00, 0x00, // Offset to image data

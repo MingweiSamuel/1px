@@ -34,7 +34,7 @@ Example: "/f29530"`;
   }
 });
 
-const DIB_PREFIX = Uint8Array.of(
+const DIB_PREFIX = Buffer.from([
   0x42, 0x4D,             // Signature 'BM'
   0x8e, 0x00, 0x00, 0x00, // Size: 142 bytes
   0x00, 0x00,             // Unused
@@ -78,10 +78,10 @@ const DIB_PREFIX = Uint8Array.of(
   0x00, 0x00, 0x00, 0x00, // Unknown
 
   // Image data here.
-);
+]);
 
 function writeDib(stream: Writable, rgbBytes: [number, number, number]) {
   stream.write(DIB_PREFIX);
   // Image data.
-  stream.end(Uint8Array.of(rgbBytes[2], rgbBytes[1], rgbBytes[0], 0xFF));
+  stream.end(Buffer.from([rgbBytes[2], rgbBytes[1], rgbBytes[0], 0xFF]));
 }

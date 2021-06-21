@@ -4,33 +4,39 @@ import type { Writable } from "stream";
 const colorHexRegex = /^\/([0-9A-F]{2})([0-9A-F]{2})([0-9A-F]{2})$/i;
 
 export const img = functions.https.onRequest((request, response) => {
-  const match = colorHexRegex.exec(request.path);
-  if (!match) {
-    const msg =
+  try {
+    const match = colorHexRegex.exec(request.path);
+    if (!match) {
+      const msg =
 `Not Found
 Path: "${request.path}"
 Expected: "/{6 digit hex code}"
 Example: "/f29530"`;
-    response
-      .status(404)
-      .type("text")
-      .send(msg);
-  }
-  else if (request.path !== match[0].toLowerCase()) {
-    response.redirect(301, request.path.toLowerCase());
-  }
-  else {
-    if (4 !== match.length) {
-      functions.logger.error(`Invalid regex match length: ${match.length}, url: ${request.url}.`);
-      response.sendStatus(500);
+      response
+        .status(404)
+        .type("text")
+        .send(msg);
+    }
+    else if (request.path !== match[0].toLowerCase()) {
+      response.redirect(301, request.path.toLowerCase());
     }
     else {
-      const rgbBytes = match.slice(1).map(s => parseInt(s, 16)) as [number, number, number];
-      response
-        .setHeader("cache-control", "public, max-age=31536000")
-        .type("bmp");
-      writeDib(response, rgbBytes);
+      if (4 !== match.length) {
+        functions.logger.error(`Invalid regex match length: ${match.length}, url: ${request.url}.`);
+        response.sendStatus(500);
+      }
+      else {
+        const rgbBytes = match.slice(1).map(s => parseInt(s, 16)) as [number, number, number];
+        response
+          .setHeader("cache-control", "public, max-age=31536000")
+          .type("bmp");
+        writeDib(response, rgbBytes);
+      }
     }
+  }
+  catch(e) {
+    functions.logger.error("Unexpected error:", e);
+    response.sendStatus(500);
   }
 });
 
